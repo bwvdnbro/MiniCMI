@@ -31,8 +31,8 @@
 #include "Box.hpp"
 #include "DensityFunction.hpp"
 #include "Error.hpp"
-#include "TravelDirections.hpp"
 #include "OpenMP.hpp"
+#include "TravelDirections.hpp"
 
 #include <cinttypes>
 #include <vector>
@@ -41,16 +41,16 @@
  * @brief Class responsible for creating DensitySubGrid instances that make up
  * a larger grid.
  */
-template < class _subgrid_type_ > class DensitySubGridCreator {
+template <class _subgrid_type_> class DensitySubGridCreator {
 private:
   /*! @brief Subgrids that make up the grid. */
-  std::vector< _subgrid_type_ * > _subgrids;
+  std::vector<_subgrid_type_ *> _subgrids;
 
   /*! @brief Indices of the original subgrid corresponding to each copy. */
-  std::vector< size_t > _originals;
+  std::vector<size_t> _originals;
 
   /*! @brief Indices of the first copy of each subgrid. */
-  std::vector< size_t > _copies;
+  std::vector<size_t> _copies;
 
   /*! @brief Dimensions of the simulation box (in m). */
   const Box<> _box;
@@ -59,14 +59,14 @@ private:
   const CoordinateVector<> _subgrid_sides;
 
   /*! @brief Number of subgrids in each coordinate direction. */
-  const CoordinateVector< int_fast32_t > _number_of_subgrids;
+  const CoordinateVector<int_fast32_t> _number_of_subgrids;
 
   /*! @brief Number of cells in each coordinate direction for a single
    *  subgrid. */
-  const CoordinateVector< int_fast32_t > _subgrid_number_of_cells;
+  const CoordinateVector<int_fast32_t> _subgrid_number_of_cells;
 
   /*! @brief Periodicity flags. */
-  const CoordinateVector< bool > _periodicity;
+  const CoordinateVector<bool> _periodicity;
 
 public:
   /**
@@ -78,9 +78,9 @@ public:
    * @param periodicity Periodicity flags.
    */
   inline DensitySubGridCreator(
-      const Box<> box, const CoordinateVector< int_fast32_t > number_of_cells,
-      const CoordinateVector< int_fast32_t > number_of_subgrids,
-      const CoordinateVector< bool > periodicity)
+      const Box<> box, const CoordinateVector<int_fast32_t> number_of_cells,
+      const CoordinateVector<int_fast32_t> number_of_subgrids,
+      const CoordinateVector<bool> periodicity)
       : _box(box), _subgrid_sides(box.get_sides()[0] / number_of_subgrids[0],
                                   box.get_sides()[1] / number_of_subgrids[1],
                                   box.get_sides()[2] / number_of_subgrids[2]),
@@ -146,7 +146,7 @@ public:
    *
    * @return Number of subgrids in each coordinate direction.
    */
-  inline CoordinateVector< int_fast32_t > get_subgrid_layout() const {
+  inline CoordinateVector<int_fast32_t> get_subgrid_layout() const {
     return _number_of_subgrids;
   }
 
@@ -155,7 +155,7 @@ public:
    *
    * @return Number of cells in each coordinate direction per subgrid.
    */
-  inline CoordinateVector< int_fast32_t > get_subgrid_cell_layout() const {
+  inline CoordinateVector<int_fast32_t> get_subgrid_cell_layout() const {
     return _subgrid_number_of_cells;
   }
 
@@ -174,7 +174,7 @@ public:
    * @return 3D integer coordinates of the subgrid within the subgrid grid
    * layout.
    */
-  inline CoordinateVector< int_fast32_t >
+  inline CoordinateVector<int_fast32_t>
   get_grid_position(const size_t index) const {
 
     const int_fast32_t ix =
@@ -185,7 +185,7 @@ public:
     const int_fast32_t iz =
         index - ix * _number_of_subgrids[1] * _number_of_subgrids[2] -
         iy * _number_of_subgrids[2];
-    return CoordinateVector< int_fast32_t >(ix, iy, iz);
+    return CoordinateVector<int_fast32_t>(ix, iy, iz);
   }
 
   /**
@@ -199,7 +199,7 @@ public:
   inline uint_fast8_t get_neighbours(const size_t index,
                                      size_t neighbours[6]) const {
 
-    const CoordinateVector< int_fast32_t > p = get_grid_position(index);
+    const CoordinateVector<int_fast32_t> p = get_grid_position(index);
     uint_fast8_t number_of_neighbours = 0;
     if (p.x() > 0) {
       const size_t ngbi =
@@ -351,7 +351,7 @@ public:
             //  - -ncell --> negative --> lower limit
             //  - 0 --> in range --> inside
             //  - ncell --> upper limit
-            const CoordinateVector< int_fast32_t > three_index(
+            const CoordinateVector<int_fast32_t> three_index(
                 nix * _subgrid_number_of_cells[0],
                 niy * _subgrid_number_of_cells[1],
                 niz * _subgrid_number_of_cells[2]);
@@ -377,7 +377,7 @@ public:
    * variables.
    */
   inline void initialize(DensityFunction &density_function) {
-    AtomicValue< size_t > igrid(0);
+    AtomicValue<size_t> igrid(0);
 #ifdef HAVE_OPENMP
 #pragma omp parallel default(shared)
 #endif
@@ -405,7 +405,7 @@ public:
    *
    * @param copy_levels Desired copy level for each subgrid.
    */
-  inline void create_copies(std::vector< uint_fast8_t > &copy_levels) {
+  inline void create_copies(std::vector<uint_fast8_t> &copy_levels) {
 
     // we need to store the original number of subgrids for reference
     const int_fast32_t number_of_unique_subgrids =
@@ -507,7 +507,7 @@ public:
    *
    * @param copy_levels Desired copy level for each subgrid.
    */
-  inline void update_copies(std::vector< uint_fast8_t > &copy_levels) {
+  inline void update_copies(std::vector<uint_fast8_t> &copy_levels) {
 
     const uint_fast32_t original_number = number_of_original_subgrids();
     for (uint_fast32_t igrid = original_number; igrid < _subgrids.size();
@@ -525,7 +525,7 @@ public:
    * from their copies.
    */
   inline void update_original_counters() {
-    AtomicValue< size_t > ioriginal(0);
+    AtomicValue<size_t> ioriginal(0);
 #ifdef HAVE_OPENMP
 #pragma omp parallel default(shared)
 #endif
@@ -549,7 +549,7 @@ public:
    * of their original.
    */
   inline void update_copy_properties() {
-    AtomicValue< size_t > ioriginal(0);
+    AtomicValue<size_t> ioriginal(0);
 #ifdef HAVE_OPENMP
 #pragma omp parallel default(shared)
 #endif
@@ -607,7 +607,7 @@ public:
      * @return Pair containing the first and last copy of the subgrid the
      * iterator is currently pointing to.
      */
-    inline std::pair< iterator, iterator > get_copies() {
+    inline std::pair<iterator, iterator> get_copies() {
       const size_t first_copy = _grid_creator->_copies[_index];
       if (first_copy == 0xffffffff) {
         return std::make_pair(

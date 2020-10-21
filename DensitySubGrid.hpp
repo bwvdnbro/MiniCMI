@@ -196,7 +196,7 @@ protected:
    * @return Single index of that same cell.
    */
   inline int_fast32_t
-  get_one_index(const CoordinateVector< int_fast32_t > three_index) const {
+  get_one_index(const CoordinateVector<int_fast32_t> three_index) const {
     return three_index[0] * _number_of_cells[3] +
            three_index[1] * _number_of_cells[2] + three_index[2];
   }
@@ -209,7 +209,7 @@ protected:
    */
   inline void
   get_three_index(const int_fast32_t one_index,
-                  CoordinateVector< int_fast32_t > &three_index) const {
+                  CoordinateVector<int_fast32_t> &three_index) const {
     three_index[0] = one_index / _number_of_cells[3];
     three_index[1] = (one_index - three_index[0] * _number_of_cells[3]) /
                      _number_of_cells[2];
@@ -224,7 +224,7 @@ protected:
    * @return True if the 3 indices match a cell in this grid.
    */
   inline bool
-  is_inside(const CoordinateVector< int_fast32_t > three_index) const {
+  is_inside(const CoordinateVector<int_fast32_t> three_index) const {
     return three_index[0] < _number_of_cells[0] && three_index[0] >= 0 &&
            three_index[1] < _number_of_cells[1] && three_index[1] >= 0 &&
            three_index[2] < _number_of_cells[2] && three_index[2] >= 0;
@@ -552,40 +552,40 @@ public:
   inline int_fast32_t
   get_start_index(const CoordinateVector<> position,
                   const int_fast32_t input_direction,
-                  CoordinateVector< int_fast32_t > &three_index) const {
+                  CoordinateVector<int_fast32_t> &three_index) const {
 
     three_index[0] = get_x_index(position[0], input_direction);
 
     cmac_assert_message(
-        std::abs(three_index[0] - static_cast< int_fast32_t >(
+        std::abs(three_index[0] - static_cast<int_fast32_t>(
                                       position[0] * _inv_cell_size[0])) < 2,
         "input_direction: %" PRIiFAST32
         ", position: %g %g %g, three_index[0]: %" PRIiFAST32
         ", real: %" PRIiFAST32,
         input_direction, position[0], position[1], position[2], three_index[0],
-        static_cast< int_fast32_t >(position[0] * _inv_cell_size[0]));
+        static_cast<int_fast32_t>(position[0] * _inv_cell_size[0]));
 
     three_index[1] = get_y_index(position[1], input_direction);
 
     cmac_assert_message(
-        std::abs(three_index[1] - static_cast< int_fast32_t >(
+        std::abs(three_index[1] - static_cast<int_fast32_t>(
                                       position[1] * _inv_cell_size[1])) < 2,
         "input_direction: %" PRIiFAST32
         ", position: %g %g %g, three_index[1]: %" PRIiFAST32
         ", real: %" PRIiFAST32,
         input_direction, position[0], position[1], position[2], three_index[1],
-        static_cast< int_fast32_t >(position[1] * _inv_cell_size[1]));
+        static_cast<int_fast32_t>(position[1] * _inv_cell_size[1]));
 
     three_index[2] = get_z_index(position[2], input_direction);
 
     cmac_assert_message(
-        std::abs(three_index[2] - static_cast< int_fast32_t >(
+        std::abs(three_index[2] - static_cast<int_fast32_t>(
                                       position[2] * _inv_cell_size[2])) < 2,
         "input_direction: %" PRIiFAST32
         ", position: %g %g %g, three_index[2]: %" PRIiFAST32
         ", real: %" PRIiFAST32,
         input_direction, position[0], position[1], position[2], three_index[2],
-        static_cast< int_fast32_t >(position[2] * _inv_cell_size[2]));
+        static_cast<int_fast32_t>(position[2] * _inv_cell_size[2]));
 
     cmac_assert_message(is_inside(three_index),
                         "position: %g %g %g, box: %g %g %g %g %g "
@@ -614,8 +614,8 @@ public:
    * @param three_index 3 index of a cell, possibly no longer inside this grid.
    * @return Outgoing direction corresponding to that 3 index.
    */
-  inline int_fast32_t get_output_direction(
-      const CoordinateVector< int_fast32_t > three_index) const {
+  inline int_fast32_t
+  get_output_direction(const CoordinateVector<int_fast32_t> three_index) const {
 
     // this is hopefully compiled into a bitwise operation rather than an
     // actual condition
@@ -653,7 +653,7 @@ public:
    * @param ncell Number of cells in each dimension.
    */
   inline DensitySubGrid(const double *box,
-                        const CoordinateVector< int_fast32_t > ncell)
+                        const CoordinateVector<int_fast32_t> ncell)
       : _computational_cost(0), _anchor{box[0], box[1], box[2]},
         _cell_size{box[3] / ncell[0], box[4] / ncell[1], box[5] / ncell[2]},
         _inv_cell_size{ncell[0] / box[3], ncell[1] / box[4], ncell[2] / box[5]},
@@ -1015,7 +1015,7 @@ public:
    */
   inline CoordinateVector<> get_cell_midpoint(const uint_fast32_t index) const {
 
-    CoordinateVector< int_fast32_t > three_index;
+    CoordinateVector<int_fast32_t> three_index;
     get_three_index(index, three_index);
     return CoordinateVector<>(
         _anchor[0] + (three_index[0] + 0.5) * _cell_size[0],
@@ -1107,7 +1107,7 @@ public:
      */
     inline const HydroVariables &get_hydro_variables() const {
       cmac_error("A DensitySubGrid has no hydro variables!");
-      return reinterpret_cast< HydroVariables & >(
+      return reinterpret_cast<HydroVariables &>(
           _subgrid->_ionization_variables[_index]);
     }
 
@@ -1200,7 +1200,7 @@ public:
    * @return Iterator to the corresponding cell.
    */
   inline iterator get_cell(const CoordinateVector<> position) {
-    CoordinateVector< int_fast32_t > three_index;
+    CoordinateVector<int_fast32_t> three_index;
     return iterator(get_start_index(position - _anchor, TRAVELDIRECTION_INSIDE,
                                     three_index),
                     *this);

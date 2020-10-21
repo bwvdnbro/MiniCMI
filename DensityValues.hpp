@@ -46,8 +46,7 @@ public:
   /**
    * @brief Empty constructor.
    */
-  inline DensityValues()
-      : _number_density(0.), _temperature(0.) {}
+  inline DensityValues() : _number_density(0.), _temperature(0.) {}
 
   /**
    * @brief Set the number density of hydrogen.

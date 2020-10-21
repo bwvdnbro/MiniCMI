@@ -41,8 +41,7 @@ public:
   /**
    * @brief (Empty) constructor.
    */
-  inline IonizationVariables()
-      : _number_density(0.), _temperature(0.) {}
+  inline IonizationVariables() : _number_density(0.), _temperature(0.) {}
 
   /**
    * @brief Copy the contents of the given IonizationVariables instance into

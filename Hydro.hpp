@@ -221,9 +221,7 @@ public:
       const double cs = std::sqrt(_pressure_conversion_factor * temperature /
                                   mean_molecular_mass);
       cmac_assert(cs == cs);
-      cmac_assert_message(cs > 0., "xH: %g, T: %g",
-                          1.,
-                          temperature);
+      cmac_assert_message(cs > 0., "xH: %g, T: %g", 1., temperature);
       return cs;
     }
   }
@@ -1092,8 +1090,8 @@ public:
                                     const double timestep) const {
 
     if (_do_explicit_heating) {
-      const double dE = 0. *
-                        timestep * ionization_variables.get_number_density() /
+      const double dE = 0. * timestep *
+                        ionization_variables.get_number_density() /
                         inverse_volume;
       update_energy_variables(ionization_variables, hydro_variables,
                               inverse_volume, dE);

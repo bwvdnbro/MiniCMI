@@ -45,11 +45,11 @@
 /**
  * @brief Value that can only be changed by thread-safe atomic operations.
  */
-template < typename _type_ > class AtomicValue {
+template <typename _type_> class AtomicValue {
 private:
 /*! @brief Underlying value. */
 #if defined(CPP_ATOMIC)
-  std::atomic< _type_ > _value;
+  std::atomic<_type_> _value;
 #elif defined(GCC_ATOMIC)
   volatile _type_ _value;
 #endif

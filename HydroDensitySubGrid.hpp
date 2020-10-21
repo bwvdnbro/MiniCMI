@@ -64,7 +64,7 @@ public:
    * @param ncell Number of cells in each dimension.
    */
   inline HydroDensitySubGrid(const double *box,
-                             const CoordinateVector< int_fast32_t > ncell)
+                             const CoordinateVector<int_fast32_t> ncell)
       : DensitySubGrid(box, ncell),
         _cell_volume(_cell_size[0] * _cell_size[1] * _cell_size[2]),
         _inverse_cell_volume(1. / _cell_volume),
@@ -1028,7 +1028,7 @@ public:
    * @return Iterator to the corresponding cell.
    */
   inline hydroiterator get_hydro_cell(const CoordinateVector<> position) {
-    CoordinateVector< int_fast32_t > three_index;
+    CoordinateVector<int_fast32_t> three_index;
     return hydroiterator(get_start_index(position - _anchor,
                                          TRAVELDIRECTION_INSIDE, three_index),
                          *this);

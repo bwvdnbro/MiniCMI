@@ -49,14 +49,11 @@ private:
   const bool _compression;
 
 public:
-  GridWriter(
-      std::string prefix, std::string output_folder = std::string("."),
-      uint_fast8_t padding = 3,
-      const bool compression = false);
+  GridWriter(std::string prefix, std::string output_folder = std::string("."),
+             uint_fast8_t padding = 3, const bool compression = false);
 
-  virtual void write(DensitySubGridCreator< HydroDensitySubGrid > &grid_creator,
-                     const uint_fast32_t counter,
-                     double time = 0.);
+  virtual void write(DensitySubGridCreator<HydroDensitySubGrid> &grid_creator,
+                     const uint_fast32_t counter, double time = 0.);
 };
 
 #endif // GRIDWRITER_HPP

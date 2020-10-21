@@ -192,7 +192,7 @@ inline void close_group(hid_t group) {
  *
  * @return hid_t handle for the corresponding HDF5 data type.
  */
-template < typename _datatype_ > inline hid_t get_datatype_name();
+template <typename _datatype_> inline hid_t get_datatype_name();
 
 /**
  * @brief get_datatype_name specialization for a double precision floating point
@@ -200,7 +200,7 @@ template < typename _datatype_ > inline hid_t get_datatype_name();
  *
  * @return H5T_NATIVE_DOUBLE.
  */
-template <> inline hid_t get_datatype_name< double >() {
+template <> inline hid_t get_datatype_name<double>() {
   return H5T_NATIVE_DOUBLE;
 }
 
@@ -210,16 +210,14 @@ template <> inline hid_t get_datatype_name< double >() {
  *
  * @return H5T_NATIVE_FLOAT.
  */
-template <> inline hid_t get_datatype_name< float >() {
-  return H5T_NATIVE_FLOAT;
-}
+template <> inline hid_t get_datatype_name<float>() { return H5T_NATIVE_FLOAT; }
 
 /**
  * @brief get_datatype_name specialization for a 32 bit unsigned integer.
  *
  * @return H5T_NATIVE_UINT32.
  */
-template <> inline hid_t get_datatype_name< uint32_t >() {
+template <> inline hid_t get_datatype_name<uint32_t>() {
   return H5T_NATIVE_UINT32;
 }
 
@@ -228,7 +226,7 @@ template <> inline hid_t get_datatype_name< uint32_t >() {
  *
  * @return H5T_NATIVE_UINT64.
  */
-template <> inline hid_t get_datatype_name< uint64_t >() {
+template <> inline hid_t get_datatype_name<uint64_t>() {
   return H5T_NATIVE_UINT64;
 }
 
@@ -237,7 +235,7 @@ template <> inline hid_t get_datatype_name< uint64_t >() {
  *
  * @return H5T_NATIVE_INT32.
  */
-template <> inline hid_t get_datatype_name< int32_t >() {
+template <> inline hid_t get_datatype_name<int32_t>() {
   return H5T_NATIVE_INT32;
 }
 
@@ -248,10 +246,10 @@ template <> inline hid_t get_datatype_name< int32_t >() {
  * @param name Name of the attribute to read.
  * @return Value of the attribute.
  */
-template < typename _datatype_ >
+template <typename _datatype_>
 inline _datatype_ read_attribute(hid_t group, std::string name) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
   // open attribute
   const hid_t attr = H5Aopen(group, name.c_str(), H5P_DEFAULT);
   if (attr < 0) {
@@ -282,8 +280,7 @@ inline _datatype_ read_attribute(hid_t group, std::string name) {
  * @return std::string containing the value of the attribute.
  */
 template <>
-inline std::string read_attribute< std::string >(hid_t group,
-                                                 std::string name) {
+inline std::string read_attribute<std::string>(hid_t group, std::string name) {
 
   // open attribute
   const hid_t attr = H5Aopen(group, name.c_str(), H5P_DEFAULT);
@@ -351,10 +348,10 @@ inline std::string read_attribute< std::string >(hid_t group,
  * @return CoordinateVector containing the values of the attribute.
  */
 template <>
-inline CoordinateVector<>
-read_attribute< CoordinateVector<> >(hid_t group, std::string name) {
+inline CoordinateVector<> read_attribute<CoordinateVector<>>(hid_t group,
+                                                             std::string name) {
 
-  const hid_t datatype = get_datatype_name< double >();
+  const hid_t datatype = get_datatype_name<double>();
   // open attribute
   const hid_t attr = H5Aopen(group, name.c_str(), H5P_DEFAULT);
   if (attr < 0) {
@@ -396,11 +393,11 @@ read_attribute< CoordinateVector<> >(hid_t group, std::string name) {
  * @param name Name of the attribute to read.
  * @return std::vector containing the values of the attribute.
  */
-template < typename _datatype_ >
-inline std::vector< _datatype_ > read_vector_attribute(hid_t group,
-                                                       std::string name) {
+template <typename _datatype_>
+inline std::vector<_datatype_> read_vector_attribute(hid_t group,
+                                                     std::string name) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
   // open attribute
   const hid_t attr = H5Aopen(group, name.c_str(), H5P_DEFAULT);
   if (attr < 0) {
@@ -443,7 +440,7 @@ inline std::vector< _datatype_ > read_vector_attribute(hid_t group,
     cmac_error("Failed to close attribute \"%s\"!", name.c_str());
   }
 
-  std::vector< _datatype_ > data_vector(size[0]);
+  std::vector<_datatype_> data_vector(size[0]);
   for (hsize_t i = 0; i < size[0]; ++i) {
     data_vector[i] = data[i];
   }
@@ -463,9 +460,9 @@ inline std::vector< _datatype_ > read_vector_attribute(hid_t group,
  * @return std::vector<unsigned int> containing the values of the attribute.
  */
 template <>
-inline std::vector< uint32_t >
-read_attribute< std::vector< uint32_t > >(hid_t group, std::string name) {
-  return read_vector_attribute< uint32_t >(group, name);
+inline std::vector<uint32_t>
+read_attribute<std::vector<uint32_t>>(hid_t group, std::string name) {
+  return read_vector_attribute<uint32_t>(group, name);
 }
 
 /**
@@ -478,9 +475,9 @@ read_attribute< std::vector< uint32_t > >(hid_t group, std::string name) {
  * @return std::vector<double> containing the values of the attribute.
  */
 template <>
-inline std::vector< double >
-read_attribute< std::vector< double > >(hid_t group, std::string name) {
-  return read_vector_attribute< double >(group, name);
+inline std::vector<double>
+read_attribute<std::vector<double>>(hid_t group, std::string name) {
+  return read_vector_attribute<double>(group, name);
 }
 
 /**
@@ -495,7 +492,7 @@ read_attribute< std::vector< double > >(hid_t group, std::string name) {
 inline herr_t add_attribute_name(hid_t group, const char *c_name,
                                  const H5A_info_t *info, void *data) {
 
-  std::vector< std::string > &names = *((std::vector< std::string > *)data);
+  std::vector<std::string> &names = *((std::vector<std::string> *)data);
   const std::string name(c_name);
   names.push_back(name);
   return 0;
@@ -507,9 +504,9 @@ inline herr_t add_attribute_name(hid_t group, const char *c_name,
  * @param group HDF5Group handle to an open group.
  * @return std::vector containing the names of all attributes in the group.
  */
-inline std::vector< std::string > get_attribute_names(hid_t group) {
+inline std::vector<std::string> get_attribute_names(hid_t group) {
 
-  std::vector< std::string > names;
+  std::vector<std::string> names;
   const herr_t hdf5status = H5Aiterate(group, H5_INDEX_NAME, H5_ITER_INC,
                                        nullptr, add_attribute_name, &names);
   if (hdf5status < 0) {
@@ -526,10 +523,10 @@ inline std::vector< std::string > get_attribute_names(hid_t group) {
  * @param name Name of the attribute to write.
  * @param value Value of the attribute.
  */
-template < typename _datatype_ >
+template <typename _datatype_>
 inline void write_attribute(hid_t group, std::string name, _datatype_ &value) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
   // create dataspace
   const hid_t attspace = H5Screate(H5S_SCALAR);
   if (attspace < 0) {
@@ -576,8 +573,8 @@ inline void write_attribute(hid_t group, std::string name, _datatype_ &value) {
  * @param value std::string containing the value to write.
  */
 template <>
-inline void write_attribute< std::string >(hid_t group, std::string name,
-                                           std::string &value) {
+inline void write_attribute<std::string>(hid_t group, std::string name,
+                                         std::string &value) {
 
   // create C-string datatype
   const hid_t strtype = H5Tcopy(H5T_C_S1);
@@ -648,10 +645,10 @@ inline void write_attribute< std::string >(hid_t group, std::string name,
  * @param value CoordinateVector containing the values to write.
  */
 template <>
-inline void write_attribute< CoordinateVector<> >(hid_t group, std::string name,
-                                                  CoordinateVector<> &value) {
+inline void write_attribute<CoordinateVector<>>(hid_t group, std::string name,
+                                                CoordinateVector<> &value) {
 
-  const hid_t datatype = get_datatype_name< double >();
+  const hid_t datatype = get_datatype_name<double>();
   // create dataspace
   const hsize_t dims[1] = {3};
   const hid_t attspace = H5Screate_simple(1, dims, nullptr);
@@ -704,11 +701,11 @@ inline void write_attribute< CoordinateVector<> >(hid_t group, std::string name,
  * @param name Name of the attribute to write.
  * @param value std::vector containing the values to write.
  */
-template < typename _datatype_ >
+template <typename _datatype_>
 inline void write_vector_attribute(hid_t group, std::string name,
-                                   std::vector< _datatype_ > &value) {
+                                   std::vector<_datatype_> &value) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
   // create dataspace
   const hsize_t dims[1] = {value.size()};
   const hid_t attspace = H5Screate_simple(1, dims, nullptr);
@@ -762,9 +759,8 @@ inline void write_vector_attribute(hid_t group, std::string name,
  * @param value std::vector<double> containing the values to write.
  */
 template <>
-inline void
-write_attribute< std::vector< double > >(hid_t group, std::string name,
-                                         std::vector< double > &value) {
+inline void write_attribute<std::vector<double>>(hid_t group, std::string name,
+                                                 std::vector<double> &value) {
   write_vector_attribute(group, name, value);
 }
 
@@ -777,8 +773,8 @@ write_attribute< std::vector< double > >(hid_t group, std::string name,
  */
 template <>
 inline void
-write_attribute< std::vector< uint32_t > >(hid_t group, std::string name,
-                                           std::vector< uint32_t > &value) {
+write_attribute<std::vector<uint32_t>>(hid_t group, std::string name,
+                                       std::vector<uint32_t> &value) {
   write_vector_attribute(group, name, value);
 }
 
@@ -789,10 +785,10 @@ write_attribute< std::vector< uint32_t > >(hid_t group, std::string name,
  * @param name Name of the dataset to read.
  * @return std::vector containing the contents of the dataset.
  */
-template < typename _datatype_ >
-inline std::vector< _datatype_ > read_dataset(hid_t group, std::string name) {
+template <typename _datatype_>
+inline std::vector<_datatype_> read_dataset(hid_t group, std::string name) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
 
 // open dataset
 #ifdef HDF5_OLD_API
@@ -838,7 +834,7 @@ inline std::vector< _datatype_ > read_dataset(hid_t group, std::string name) {
     cmac_error("Failed to close dataset \"%s\"", name.c_str());
   }
 
-  std::vector< _datatype_ > datavector(size[0]);
+  std::vector<_datatype_> datavector(size[0]);
   for (hsize_t i = 0; i < size[0]; ++i) {
     datavector[i] = data[i];
   }
@@ -857,12 +853,12 @@ inline std::vector< _datatype_ > read_dataset(hid_t group, std::string name) {
  * @param part_size Size of the part that needs to be read.
  * @return std::vector containing the contents of the dataset.
  */
-template < typename _datatype_ >
-inline std::vector< _datatype_ >
+template <typename _datatype_>
+inline std::vector<_datatype_>
 read_dataset_part(const hid_t group, const std::string name,
                   const hsize_t part_offset, const hsize_t part_size) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
 
 // open dataset
 #ifdef HDF5_OLD_API
@@ -917,7 +913,7 @@ read_dataset_part(const hid_t group, const std::string name,
     cmac_error("Failed to close dataset \"%s\"", name.c_str());
   }
 
-  std::vector< _datatype_ > datavector(part_size);
+  std::vector<_datatype_> datavector(part_size);
   for (hsize_t i = 0; i < part_size; ++i) {
     datavector[i] = data[i];
   }
@@ -935,10 +931,10 @@ read_dataset_part(const hid_t group, const std::string name,
  * @return std::vector containing the contents of the dataset.
  */
 template <>
-inline std::vector< CoordinateVector<> >
-read_dataset< CoordinateVector<> >(hid_t group, std::string name) {
+inline std::vector<CoordinateVector<>>
+read_dataset<CoordinateVector<>>(hid_t group, std::string name) {
 
-  const hid_t datatype = get_datatype_name< double >();
+  const hid_t datatype = get_datatype_name<double>();
 
 // open dataset
 #ifdef HDF5_OLD_API
@@ -984,7 +980,7 @@ read_dataset< CoordinateVector<> >(hid_t group, std::string name) {
     cmac_error("Failed to close dataset \"%s\"", name.c_str());
   }
 
-  std::vector< CoordinateVector<> > datavector(size[0]);
+  std::vector<CoordinateVector<>> datavector(size[0]);
   for (hsize_t i = 0; i < size[0]; ++i) {
     datavector[i][0] = data[3 * i];
     datavector[i][1] = data[3 * i + 1];
@@ -999,10 +995,10 @@ read_dataset< CoordinateVector<> >(hid_t group, std::string name) {
 /**
  * @brief Multidimensional data block.
  */
-template < typename _datatype_, uint_fast8_t _size_ > class HDF5DataBlock {
+template <typename _datatype_, uint_fast8_t _size_> class HDF5DataBlock {
 private:
   /*! @brief Size of the multidimensional array. */
-  std::array< size_t, _size_ > _size;
+  std::array<size_t, _size_> _size;
 
   /*! @brief Data. */
   _datatype_ *_data;
@@ -1015,7 +1011,7 @@ public:
    * @param data Data for the block, should be an array with total size equal to
    * the product of the given dimensions.
    */
-  HDF5DataBlock(std::array< size_t, _size_ > dimensions, _datatype_ *data)
+  HDF5DataBlock(std::array<size_t, _size_> dimensions, _datatype_ *data)
       : _size(dimensions) {
 
     size_t datasize = 1;
@@ -1062,7 +1058,7 @@ public:
    * @param index Multidimensional index.
    * @return Element at that position.
    */
-  inline _datatype_ &operator[](std::array< size_t, _size_ > index) {
+  inline _datatype_ &operator[](std::array<size_t, _size_> index) {
 
     size_t dataindex = 0;
     size_t product = 1;
@@ -1081,8 +1077,7 @@ public:
    * @param index Multidimensional index.
    * @return Element at that position.
    */
-  inline const _datatype_ &
-  operator[](std::array< size_t, _size_ > index) const {
+  inline const _datatype_ &operator[](std::array<size_t, _size_> index) const {
 
     size_t dataindex = 0;
     size_t product = 1;
@@ -1098,7 +1093,7 @@ public:
    *
    * @return Size of the array.
    */
-  inline std::array< size_t, _size_ > size() const { return _size; }
+  inline std::array<size_t, _size_> size() const { return _size; }
 };
 
 /**
@@ -1109,11 +1104,10 @@ public:
  * @param name Name of the dataset to read.
  * @return HDF5DataBlock containing the contents of the dataset.
  */
-template < typename _datatype_, uint_fast8_t _size_ >
-HDF5DataBlock< _datatype_, _size_ > read_dataset(hid_t group,
-                                                 std::string name) {
+template <typename _datatype_, uint_fast8_t _size_>
+HDF5DataBlock<_datatype_, _size_> read_dataset(hid_t group, std::string name) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
 
 // open dataset
 #ifdef HDF5_OLD_API
@@ -1140,7 +1134,7 @@ HDF5DataBlock< _datatype_, _size_ > read_dataset(hid_t group,
   }
 
   // read dataset
-  std::array< size_t, _size_ > dimensions;
+  std::array<size_t, _size_> dimensions;
   size_t dprod = 1;
   for (uint_fast8_t i = 0; i < _size_; ++i) {
     dimensions[i] = size[i];
@@ -1165,7 +1159,7 @@ HDF5DataBlock< _datatype_, _size_ > read_dataset(hid_t group,
     cmac_error("Failed to close dataset \"%s\"", name.c_str());
   }
 
-  const HDF5DataBlock< _datatype_, _size_ > block(dimensions, data);
+  const HDF5DataBlock<_datatype_, _size_> block(dimensions, data);
 
   delete[] data;
 
@@ -1176,7 +1170,7 @@ HDF5DataBlock< _datatype_, _size_ > read_dataset(hid_t group,
  * @brief Struct used to read in compound datasets consisting of a key and a
  * value, like in FLASH snapshots.
  */
-template < typename _datatype_ > struct HDF5CompoundKeyValueType {
+template <typename _datatype_> struct HDF5CompoundKeyValueType {
   /*! @brief Key name. */
   char _name[20];
   /*! @brief Value. */
@@ -1186,10 +1180,10 @@ template < typename _datatype_ > struct HDF5CompoundKeyValueType {
 /**
  * @brief Wrapper for std::map that checks if accessed elements exist.
  */
-template < typename _datatype_ > class HDF5Dictionary {
+template <typename _datatype_> class HDF5Dictionary {
 private:
   /*! @brief std::map for which this class is a wrapper. */
-  std::map< std::string, _datatype_ > _map;
+  std::map<std::string, _datatype_> _map;
 
 public:
   /**
@@ -1197,7 +1191,7 @@ public:
    *
    * @param map std::map for which this class is a wrapper.
    */
-  inline HDF5Dictionary(std::map< std::string, _datatype_ > &map) : _map(map) {}
+  inline HDF5Dictionary(std::map<std::string, _datatype_> &map) : _map(map) {}
 
   /**
    * @brief Access operator.
@@ -1224,11 +1218,11 @@ public:
  * @param name Name of the compound dataset to read.
  * @return Contents of the compound dataset, as a dictionary.
  */
-template < typename _datatype_ >
-inline HDF5Dictionary< _datatype_ > read_dictionary(hid_t group,
-                                                    std::string name) {
+template <typename _datatype_>
+inline HDF5Dictionary<_datatype_> read_dictionary(hid_t group,
+                                                  std::string name) {
 
-  const hid_t valuetype = get_datatype_name< _datatype_ >();
+  const hid_t valuetype = get_datatype_name<_datatype_>();
 
 // open dataset
 #ifdef HDF5_OLD_API
@@ -1256,7 +1250,7 @@ inline HDF5Dictionary< _datatype_ > read_dictionary(hid_t group,
 
   // create compound data type
   const hid_t datatype =
-      H5Tcreate(H5T_COMPOUND, sizeof(HDF5CompoundKeyValueType< _datatype_ >));
+      H5Tcreate(H5T_COMPOUND, sizeof(HDF5CompoundKeyValueType<_datatype_>));
   if (datatype < 0) {
     cmac_error("Failed to create datatype for dataset \"%s\"", name.c_str());
   }
@@ -1269,22 +1263,22 @@ inline HDF5Dictionary< _datatype_ > read_dictionary(hid_t group,
                name.c_str());
   }
 
-  hdf5status = H5Tinsert(datatype, "name",
-                         HOFFSET(HDF5CompoundKeyValueType< _datatype_ >, _name),
-                         string20);
+  hdf5status =
+      H5Tinsert(datatype, "name",
+                HOFFSET(HDF5CompoundKeyValueType<_datatype_>, _name), string20);
   if (hdf5status < 0) {
     cmac_error("Failed to insert name type for dataset \"%s\"", name.c_str());
   }
-  hdf5status = H5Tinsert(
-      datatype, "value",
-      HOFFSET(HDF5CompoundKeyValueType< _datatype_ >, _value), valuetype);
+  hdf5status = H5Tinsert(datatype, "value",
+                         HOFFSET(HDF5CompoundKeyValueType<_datatype_>, _value),
+                         valuetype);
   if (hdf5status < 0) {
     cmac_error("Failed to insert value type for dataset \"%s\"", name.c_str());
   }
 
   // read the data
-  HDF5CompoundKeyValueType< _datatype_ > *data =
-      new HDF5CompoundKeyValueType< _datatype_ >[size[0]];
+  HDF5CompoundKeyValueType<_datatype_> *data =
+      new HDF5CompoundKeyValueType<_datatype_>[size[0]];
 
   hdf5status = H5Dread(dataset, datatype, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
   if (hdf5status < 0) {
@@ -1315,7 +1309,7 @@ inline HDF5Dictionary< _datatype_ > read_dictionary(hid_t group,
   }
 
   // construct the dictionary
-  std::map< std::string, _datatype_ > dictionary;
+  std::map<std::string, _datatype_> dictionary;
   for (hsize_t i = 0; i < size[0]; ++i) {
     // strip spaces at the end of the string
     uint_fast8_t j = 18;
@@ -1330,7 +1324,7 @@ inline HDF5Dictionary< _datatype_ > read_dictionary(hid_t group,
   // free memory
   delete[] data;
 
-  return HDF5Dictionary< _datatype_ >(dictionary);
+  return HDF5Dictionary<_datatype_>(dictionary);
 }
 
 /**
@@ -1341,12 +1335,12 @@ inline HDF5Dictionary< _datatype_ > read_dictionary(hid_t group,
  * @param values std::vector containing the contents of the dataset.
  * @param compress Apply compression to the dataset?
  */
-template < typename _datatype_ >
+template <typename _datatype_>
 inline void write_dataset(hid_t group, std::string name,
-                          std::vector< _datatype_ > &values,
+                          std::vector<_datatype_> &values,
                           const bool compress = false) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
 
   // create dataspace
   const uint_fast32_t vsize = values.size();
@@ -1437,10 +1431,10 @@ inline void write_dataset(hid_t group, std::string name,
  */
 template <>
 inline void write_dataset(hid_t group, std::string name,
-                          std::vector< CoordinateVector<> > &values,
+                          std::vector<CoordinateVector<>> &values,
                           const bool compress) {
 
-  const hid_t datatype = get_datatype_name< double >();
+  const hid_t datatype = get_datatype_name<double>();
 
   // create dataspace
   const uint_fast32_t vsize = values.size();
@@ -1533,7 +1527,7 @@ inline void write_dataset(hid_t group, std::string name,
  */
 template <>
 inline void write_dataset(hid_t group, std::string name,
-                          std::vector< std::string > &values,
+                          std::vector<std::string> &values,
                           const bool compress) {
 
   const hid_t datatype = H5Tcopy(H5T_C_S1);
@@ -1648,11 +1642,11 @@ inline void write_dataset(hid_t group, std::string name,
  * @param size Size of the dataset.
  * @param compress Apply compression to the dataset?
  */
-template < typename _datatype_ >
+template <typename _datatype_>
 inline void create_dataset(hid_t group, std::string name, hsize_t size,
                            const bool compress = false) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
 
   // create dataspace
   const hsize_t limit = 1 << 10;
@@ -1730,11 +1724,11 @@ inline void create_dataset(hid_t group, std::string name, hsize_t size,
  * @param compress Apply compression to the dataset?
  */
 template <>
-inline void create_dataset< CoordinateVector<> >(hid_t group, std::string name,
-                                                 hsize_t size,
-                                                 const bool compress) {
+inline void create_dataset<CoordinateVector<>>(hid_t group, std::string name,
+                                               hsize_t size,
+                                               const bool compress) {
 
-  const hid_t datatype = get_datatype_name< double >();
+  const hid_t datatype = get_datatype_name<double>();
 
   // create dataspace
   const hsize_t limit = 1 << 10;
@@ -1810,11 +1804,11 @@ inline void create_dataset< CoordinateVector<> >(hid_t group, std::string name,
  * @param offset Offset of the new data within the dataset.
  * @param values std::vector containing the data to append.
  */
-template < typename _datatype_ >
+template <typename _datatype_>
 inline void append_dataset(hid_t group, std::string name, hsize_t offset,
-                           std::vector< _datatype_ > &values) {
+                           std::vector<_datatype_> &values) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
 
 // open dataset
 #ifdef HDF5_OLD_API
@@ -1894,9 +1888,9 @@ inline void append_dataset(hid_t group, std::string name, hsize_t offset,
  */
 template <>
 inline void append_dataset(hid_t group, std::string name, hsize_t offset,
-                           std::vector< CoordinateVector<> > &values) {
+                           std::vector<CoordinateVector<>> &values) {
 
-  const hid_t datatype = get_datatype_name< double >();
+  const hid_t datatype = get_datatype_name<double>();
 
 // open dataset
 #ifdef HDF5_OLD_API
@@ -1977,12 +1971,12 @@ inline void append_dataset(hid_t group, std::string name, hsize_t offset,
  * @param number_of_columns Number of columns in the dataset.
  * @param compress Apply compression to the dataset?
  */
-template < typename _datatype_ >
+template <typename _datatype_>
 inline void create_datatable(hid_t group, std::string name,
                              hsize_t number_of_rows, hsize_t number_of_columns,
                              const bool compress = false) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
 
   // create dataspace
   const hsize_t limit = 1 << 10;
@@ -2059,11 +2053,11 @@ inline void create_datatable(hid_t group, std::string name,
  * @param row_index Index of the row to fill.
  * @param values std::vector containing the data to append.
  */
-template < typename _datatype_ >
+template <typename _datatype_>
 inline void fill_row(hid_t group, std::string name, hsize_t row_index,
-                     std::vector< _datatype_ > &values) {
+                     std::vector<_datatype_> &values) {
 
-  const hid_t datatype = get_datatype_name< _datatype_ >();
+  const hid_t datatype = get_datatype_name<_datatype_>();
 
 // open dataset
 #ifdef HDF5_OLD_API
