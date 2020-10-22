@@ -94,16 +94,44 @@ void GridWriter::write(DensitySubGridCreator<HydroDensitySubGrid> &grid_creator,
   HDF5Tools::write_attribute<double>(group, "Time", time);
   HDF5Tools::close_group(group);
 
-  // write parameters
-  // NEEDS IMPLEMENTATION (we at least need the parameters for the subgrid
-  // layout to be able to parse the output files correctly...)
-  //  group = HDF5Tools::create_group(file, "Parameters");
-  //  for (auto it = params.begin(); it != params.end(); ++it) {
-  //    std::string key = it.get_key();
-  //    std::string value = it.get_value();
-  //    HDF5Tools::write_attribute< std::string >(group, key, value);
-  //  }
-  //  HDF5Tools::close_group(group);
+  // THE CODE BELOW IS A HACK
+  // In the actual CMacIonize code, the Parameters block contains a copy of the
+  // parameters in the actual parameter file
+  // We only include some of them here because they are read by analysis scripts
+  // that we want to use.
+  group = HDF5Tools::create_group(file, "Parameters");
+  const CoordinateVector<int_fast32_t> num_subgrids =
+      grid_creator.get_subgrid_layout();
+  const CoordinateVector<int_fast32_t> num_cells_per_subgrid =
+      grid_creator.get_subgrid_cell_layout();
+  const CoordinateVector<int_fast32_t> num_cells(
+      num_subgrids.x() * num_cells_per_subgrid.x(),
+      num_subgrids.y() * num_cells_per_subgrid.y(),
+      num_subgrids.z() * num_cells_per_subgrid.z());
+  std::stringstream arraystr;
+  arraystr << "[" << num_cells.x() << "," << num_cells.y() << ","
+           << num_cells.z() << "]";
+  std::string array = arraystr.str();
+  HDF5Tools::write_attribute<std::string>(group, "DensityGrid:number of cells",
+                                          array);
+  arraystr.str("");
+  arraystr << "[" << num_subgrids.x() << "," << num_subgrids.y() << ","
+           << num_subgrids.z() << "]";
+  array = arraystr.str();
+  HDF5Tools::write_attribute<std::string>(
+      group, "DensitySubGridCreator:number of subgrids", array);
+  arraystr.str("");
+  arraystr << "[" << box.get_anchor().x() << " m, " << box.get_anchor().y()
+           << " m, " << box.get_anchor().z() << " m]";
+  array = arraystr.str();
+  HDF5Tools::write_attribute<std::string>(group, "SimulationBox:anchor", array);
+  arraystr.str("");
+  arraystr << "[" << box.get_sides().x() << " m, " << box.get_sides().y()
+           << " m, " << box.get_sides().z() << " m]";
+  array = arraystr.str();
+  HDF5Tools::write_attribute<std::string>(group, "SimulationBox:sides", array);
+  HDF5Tools::close_group(group);
+  // END OF HACK
 
   // write runtime parameters
   group = HDF5Tools::create_group(file, "RuntimePars");
@@ -136,43 +164,15 @@ void GridWriter::write(DensitySubGridCreator<HydroDensitySubGrid> &grid_creator,
   // to limit memory usage, we first create all datasets, and then add the data
   // in small blocks
   group = HDF5Tools::create_group(file, "PartType0");
-  //  for (int_fast32_t property = 0; property < DENSITYGRIDFIELD_NUMBER;
-  //       ++property) {
-  //    if (fields.field_present(property)) {
-  //      const std::string name = DensityGridWriterFields::get_name(property);
-  //      if (DensityGridWriterFields::get_type(property) ==
-  //          DENSITYGRIDFIELDTYPE_VECTOR_DOUBLE) {
-  //        HDF5Tools::create_dataset< CoordinateVector<> >(group, name,
-  //        numpart[0],
-  //                                                        _compression);
-  //      } else {
-  //        if (DensityGridWriterFields::is_ion_property(property)) {
-  //          for (int_fast32_t ion = 0; ion < NUMBER_OF_IONNAMES; ++ion) {
-  //            if (fields.ion_present(property, ion)) {
-  //              const std::string prop_name = name + get_ion_name(ion);
-  //              HDF5Tools::create_dataset< double >(group, prop_name,
-  //              numpart[0],
-  //                                                  _compression);
-  //            }
-  //          }
-  //        } else if (DensityGridWriterFields::is_heating_property(property)) {
-  //          for (int_fast32_t heating = 0; heating < NUMBER_OF_HEATINGTERMS;
-  //               ++heating) {
-  //            if (fields.heatingterm_present(property, heating)) {
-  //              const std::string prop_name = name + get_ion_name(heating);
-  //              HDF5Tools::create_dataset< double >(group, prop_name,
-  //              numpart[0],
-  //                                                  _compression);
-  //            }
-  //          }
-  //        } else {
-  //          HDF5Tools::create_dataset< double >(group, name, numpart[0],
-  //                                              _compression);
-  //        }
-  //      }
-  //    }
-  //  }
-  // CREATE DATASETS
+  // the code below differs from actual CMacIonize, where the desired output
+  // data can be selected in the parameter file
+  // in MiniCMI, we simply hard-code the desired output
+  const uint_fast32_t number_of_vector_props = 1;
+  const uint_fast32_t number_of_scalar_props = 1;
+  HDF5Tools::create_dataset<CoordinateVector<>>(group, "Coordinates",
+                                                numpart[0], _compression);
+  HDF5Tools::create_dataset<double>(group, "NumberDensity", numpart[0],
+                                    _compression);
 
   const uint_fast32_t blocksize = 10000;
   uint_fast32_t block_offset = 0;
@@ -188,123 +188,42 @@ void GridWriter::write(DensitySubGridCreator<HydroDensitySubGrid> &grid_creator,
           offset + blocksize, uint_fast32_t((*gridit).get_number_of_cells()));
       const uint_fast32_t thisblocksize = upper_limit - offset;
 
-      //      std::vector< std::vector< CoordinateVector<> > > vector_props(
-      //          fields.get_field_count(DENSITYGRIDFIELDTYPE_VECTOR_DOUBLE),
-      //          std::vector< CoordinateVector<> >(thisblocksize));
-      //      std::vector< std::vector< double > > scalar_props(
-      //          fields.get_field_count(DENSITYGRIDFIELDTYPE_SCALAR_DOUBLE),
-      //          std::vector< double >(thisblocksize));
-      // PUT IN THE CORRECT NUMBERS HERE
+      // the code below differs from CMacIonize, where the number of vector and
+      // scalar properties is configurable
+      // in MiniCMI, these numbers are hard-coded and should match the number of
+      // hard-coded output datasets of each type
       std::vector<std::vector<CoordinateVector<>>> vector_props(
-          0, std::vector<CoordinateVector<>>(thisblocksize));
+          number_of_vector_props,
+          std::vector<CoordinateVector<>>(thisblocksize));
       std::vector<std::vector<double>> scalar_props(
-          0, std::vector<double>(thisblocksize));
+          number_of_scalar_props, std::vector<double>(thisblocksize));
 
       size_t index = 0;
       for (auto cellit = (*gridit).hydro_begin() + offset;
            cellit != (*gridit).hydro_begin() + upper_limit; ++cellit) {
         uint_fast8_t vector_index = 0;
         uint_fast8_t scalar_index = 0;
-        //        for (int_fast32_t property = 0; property <
-        //        DENSITYGRIDFIELD_NUMBER;
-        //             ++property) {
-        //          if (fields.field_present(property)) {
-        //            if (DensityGridWriterFields::get_type(property) ==
-        //                DENSITYGRIDFIELDTYPE_VECTOR_DOUBLE) {
-        //              vector_props[vector_index][index] =
-        //                  DensityGridWriterFields::get_vector_double_value(
-        //                      property, cellit, box.get_anchor());
-        //              ++vector_index;
-        //            } else {
-        //              if (DensityGridWriterFields::is_ion_property(property))
-        //              {
-        //                for (int_fast32_t ion = 0; ion < NUMBER_OF_IONNAMES;
-        //                ++ion) {
-        //                  if (fields.ion_present(property, ion)) {
-        //                    scalar_props[scalar_index][index] =
-        //                        DensityGridWriterFields::get_scalar_double_ion_value(
-        //                            property, ion, cellit);
-        //                    ++scalar_index;
-        //                  }
-        //                }
-        //              } else if (DensityGridWriterFields::is_heating_property(
-        //                             property)) {
-        //                for (int_fast32_t heating = 0; heating <
-        //                NUMBER_OF_HEATINGTERMS;
-        //                     ++heating) {
-        //                  if (fields.heatingterm_present(property, heating)) {
-        //                    scalar_props[scalar_index][index] =
-        //                        DensityGridWriterFields::
-        //                            get_scalar_double_heating_value(property,
-        //                            heating,
-        //                                                            cellit);
-        //                    ++scalar_index;
-        //                  }
-        //                }
-        //              } else {
-        //                scalar_props[scalar_index][index] =
-        //                    DensityGridWriterFields::get_scalar_double_value(property,
-        //                                                                     cellit);
-        //                ++scalar_index;
-        //              }
-        //            }
-        //          }
-        //        }
-        // FILL ARRAYS WITH VARIABLES
+        // FILL ARRAYS WITH VARIABLES (code differs from CMacIonize)
+        vector_props[vector_index][index] =
+            cellit.get_cell_midpoint() - box.get_anchor();
+        ++vector_index;
+        scalar_props[scalar_index][index] =
+            cellit.get_ionization_variables().get_number_density();
+        ++scalar_index;
         ++index;
       }
 
       uint_fast8_t vector_index = 0;
       uint_fast8_t scalar_index = 0;
-      //      for (int_fast32_t property = 0; property <
-      //      DENSITYGRIDFIELD_NUMBER;
-      //           ++property) {
-      //        if (fields.field_present(property)) {
-      //          const std::string name =
-      //          DensityGridWriterFields::get_name(property); if
-      //          (DensityGridWriterFields::get_type(property) ==
-      //              DENSITYGRIDFIELDTYPE_VECTOR_DOUBLE) {
-      //            HDF5Tools::append_dataset< CoordinateVector<> >(
-      //                group, name, block_offset + offset,
-      //                vector_props[vector_index]);
-      //            ++vector_index;
-      //          } else {
-      //            if (DensityGridWriterFields::is_ion_property(property)) {
-      //              for (int_fast32_t ion = 0; ion < NUMBER_OF_IONNAMES;
-      //              ++ion) {
-      //                if (fields.ion_present(property, ion)) {
-      //                  const std::string prop_name = name +
-      //                  get_ion_name(ion); HDF5Tools::append_dataset< double
-      //                  >(
-      //                      group, prop_name, block_offset + offset,
-      //                      scalar_props[scalar_index]);
-      //                  ++scalar_index;
-      //                }
-      //              }
-      //            } else if
-      //            (DensityGridWriterFields::is_heating_property(property)) {
-      //              for (int_fast32_t heating = 0; heating <
-      //              NUMBER_OF_HEATINGTERMS;
-      //                   ++heating) {
-      //                if (fields.heatingterm_present(property, heating)) {
-      //                  const std::string prop_name = name +
-      //                  get_ion_name(heating); HDF5Tools::append_dataset<
-      //                  double >(
-      //                      group, prop_name, block_offset + offset,
-      //                      scalar_props[scalar_index]);
-      //                  ++scalar_index;
-      //                }
-      //              }
-      //            } else {
-      //              HDF5Tools::append_dataset< double >(group, name,
-      //                                                  block_offset + offset,
-      //                                                  scalar_props[scalar_index]);
-      //              ++scalar_index;
-      //            }
-      //          }
-      //        }
-      //      }
-      // WRITE ARRAYS TO FILE
+      // WRITE ARRAYS TO FILE (code differs from CMacIonize)
+      HDF5Tools::append_dataset<CoordinateVector<>>(group, "Coordinates",
+                                                    block_offset + offset,
+                                                    vector_props[vector_index]);
+      ++vector_index;
+      HDF5Tools::append_dataset<double>(group, "NumberDensity",
+                                        block_offset + offset,
+                                        scalar_props[scalar_index]);
+      ++scalar_index;
     }
     block_offset += (*gridit).get_number_of_cells();
   }
