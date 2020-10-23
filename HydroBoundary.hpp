@@ -69,6 +69,18 @@ public:
                                  const int_fast8_t orientation,
                                  const CoordinateVector<> posR,
                                  const HydroVariables &left_state) const = 0;
+
+  /// TEST VARIABLE
+  /**
+   * @brief Boundary condition called by the ghost sweep for the test neighbour
+   * density sum variable.
+   *
+   * We simply return the input value, which corresponds to the test density of
+   * the cell next to the border.
+   */
+  inline double get_test_density(const double input_test_density) const {
+    return input_test_density;
+  }
 };
 
 /**

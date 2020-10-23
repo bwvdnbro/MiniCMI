@@ -167,12 +167,21 @@ void GridWriter::write(DensitySubGridCreator<HydroDensitySubGrid> &grid_creator,
   // the code below differs from actual CMacIonize, where the desired output
   // data can be selected in the parameter file
   // in MiniCMI, we simply hard-code the desired output
-  const uint_fast32_t number_of_vector_props = 1;
-  const uint_fast32_t number_of_scalar_props = 1;
+  uint_fast32_t number_of_vector_props = 0;
+  uint_fast32_t number_of_scalar_props = 0;
   HDF5Tools::create_dataset<CoordinateVector<>>(group, "Coordinates",
                                                 numpart[0], _compression);
+  ++number_of_vector_props;
   HDF5Tools::create_dataset<double>(group, "NumberDensity", numpart[0],
                                     _compression);
+  ++number_of_scalar_props;
+  /// TEST VARIABLES
+  HDF5Tools::create_dataset<double>(group, "TestDensity", numpart[0],
+                                    _compression);
+  ++number_of_scalar_props;
+  HDF5Tools::create_dataset<double>(group, "TestNeighbourDensitySum",
+                                    numpart[0], _compression);
+  ++number_of_scalar_props;
 
   const uint_fast32_t blocksize = 10000;
   uint_fast32_t block_offset = 0;
@@ -210,6 +219,12 @@ void GridWriter::write(DensitySubGridCreator<HydroDensitySubGrid> &grid_creator,
         scalar_props[scalar_index][index] =
             cellit.get_ionization_variables().get_number_density();
         ++scalar_index;
+        scalar_props[scalar_index][index] =
+            cellit.get_hydro_variables().get_test_density();
+        ++scalar_index;
+        scalar_props[scalar_index][index] =
+            cellit.get_hydro_variables().get_test_neighbour_density_sum();
+        ++scalar_index;
         ++index;
       }
 
@@ -221,6 +236,14 @@ void GridWriter::write(DensitySubGridCreator<HydroDensitySubGrid> &grid_creator,
                                                     vector_props[vector_index]);
       ++vector_index;
       HDF5Tools::append_dataset<double>(group, "NumberDensity",
+                                        block_offset + offset,
+                                        scalar_props[scalar_index]);
+      ++scalar_index;
+      HDF5Tools::append_dataset<double>(group, "TestDensity",
+                                        block_offset + offset,
+                                        scalar_props[scalar_index]);
+      ++scalar_index;
+      HDF5Tools::append_dataset<double>(group, "TestNeighbourDensitySum",
                                         block_offset + offset,
                                         scalar_props[scalar_index]);
       ++scalar_index;

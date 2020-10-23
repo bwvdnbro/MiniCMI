@@ -1033,6 +1033,309 @@ public:
                                          TRAVELDIRECTION_INSIDE, three_index),
                          *this);
   }
+
+  /// TEST VARIABLE OPERATIONS
+
+  /**
+   * @brief Set the test density for all cells in this subgrid.
+   *
+   * This function is quite straightforward: we traverse all cells in this
+   * subgrid and copy each cell's number density into its test density.
+   */
+  inline void set_test_density() {
+
+    const int_fast32_t tot_num_cells =
+        _number_of_cells[0] * _number_of_cells[3];
+    for (int_fast32_t i = 0; i < tot_num_cells; ++i) {
+      _hydro_variables[i].set_test_density(
+          _ionization_variables[i].get_number_density());
+    }
+  }
+
+  /**
+   * @brief Perform a sweep over all cell pairs within this subgrid to add
+   * contributions to the test neighbour density sum.
+   *
+   * This function traverses the subgrid three times, once along each one of the
+   * coordinates axes (x, y, z). For each pair of cells A+B along these axes,
+   * we add the test density of cell B to the counter of A, and vice versa.
+   */
+  inline void inner_test_neighbour_density_sum_sweep() {
+
+    // we do three separate sweeps: one for every coordinate direction
+    for (int_fast32_t ix = 0; ix < _number_of_cells[0] - 1; ++ix) {
+      for (int_fast32_t iy = 0; iy < _number_of_cells[1]; ++iy) {
+        for (int_fast32_t iz = 0; iz < _number_of_cells[2]; ++iz) {
+          const int_fast32_t index000 =
+              ix * _number_of_cells[3] + iy * _number_of_cells[2] + iz;
+          const int_fast32_t index100 =
+              (ix + 1) * _number_of_cells[3] + iy * _number_of_cells[2] + iz;
+          // x direction
+          _hydro_variables[index000].set_test_neighbour_density_sum(
+              _hydro_variables[index000].get_test_neighbour_density_sum() +
+              _hydro_variables[index100].get_test_density());
+          _hydro_variables[index100].set_test_neighbour_density_sum(
+              _hydro_variables[index100].get_test_neighbour_density_sum() +
+              _hydro_variables[index000].get_test_density());
+        }
+      }
+    }
+    for (int_fast32_t ix = 0; ix < _number_of_cells[0]; ++ix) {
+      for (int_fast32_t iy = 0; iy < _number_of_cells[1] - 1; ++iy) {
+        for (int_fast32_t iz = 0; iz < _number_of_cells[2]; ++iz) {
+          const int_fast32_t index000 =
+              ix * _number_of_cells[3] + iy * _number_of_cells[2] + iz;
+          const int_fast32_t index010 =
+              ix * _number_of_cells[3] + (iy + 1) * _number_of_cells[2] + iz;
+          // y direction
+          _hydro_variables[index000].set_test_neighbour_density_sum(
+              _hydro_variables[index000].get_test_neighbour_density_sum() +
+              _hydro_variables[index010].get_test_density());
+          _hydro_variables[index010].set_test_neighbour_density_sum(
+              _hydro_variables[index010].get_test_neighbour_density_sum() +
+              _hydro_variables[index000].get_test_density());
+        }
+      }
+    }
+    for (int_fast32_t ix = 0; ix < _number_of_cells[0]; ++ix) {
+      for (int_fast32_t iy = 0; iy < _number_of_cells[1]; ++iy) {
+        for (int_fast32_t iz = 0; iz < _number_of_cells[2] - 1; ++iz) {
+          const int_fast32_t index000 =
+              ix * _number_of_cells[3] + iy * _number_of_cells[2] + iz;
+          const int_fast32_t index001 =
+              ix * _number_of_cells[3] + iy * _number_of_cells[2] + iz + 1;
+          // z direction
+          _hydro_variables[index000].set_test_neighbour_density_sum(
+              _hydro_variables[index000].get_test_neighbour_density_sum() +
+              _hydro_variables[index001].get_test_density());
+          _hydro_variables[index001].set_test_neighbour_density_sum(
+              _hydro_variables[index001].get_test_neighbour_density_sum() +
+              _hydro_variables[index000].get_test_density());
+        }
+      }
+    }
+  }
+
+  /**
+   * @brief Perform a sweep over all cell pairs across the boundary between
+   * this subgrid and the given neighbouring subgrid.
+   *
+   * The function traverses the axes parallel to the edge between the subgrids.
+   * For each pair of cells A+B (where A is part of this subgrid, and B part of
+   * the neighbouring subgrid), the test density of B is added to the counter of
+   * A and vice versa.
+   */
+  inline void
+  outer_test_neighbour_density_sum_sweep(const int_fast32_t direction,
+                                         HydroDensitySubGrid &neighbour) {
+
+    int_fast32_t i, start_index_left, start_index_right, row_increment,
+        row_length, column_increment, column_length;
+    double dxinv;
+    HydroDensitySubGrid *left_grid, *right_grid;
+    switch (direction) {
+    case TRAVELDIRECTION_FACE_X_P:
+      i = 0;
+      left_grid = this;
+      right_grid = &neighbour;
+      start_index_left = (_number_of_cells[0] - 1) * _number_of_cells[3];
+      start_index_right = 0;
+      row_increment = 1;
+      row_length = _number_of_cells[2];
+      column_increment = _number_of_cells[2];
+      column_length = _number_of_cells[1];
+      dxinv = _inv_cell_size[0];
+      break;
+    case TRAVELDIRECTION_FACE_X_N:
+      i = 0;
+      left_grid = &neighbour;
+      right_grid = this;
+      start_index_left = (_number_of_cells[0] - 1) * _number_of_cells[3];
+      start_index_right = 0;
+      row_increment = 1;
+      row_length = _number_of_cells[2];
+      column_increment = _number_of_cells[2];
+      column_length = _number_of_cells[1];
+      dxinv = _inv_cell_size[0];
+      break;
+    case TRAVELDIRECTION_FACE_Y_P:
+      i = 1;
+      left_grid = this;
+      right_grid = &neighbour;
+      start_index_left = (_number_of_cells[1] - 1) * _number_of_cells[2];
+      start_index_right = 0;
+      row_increment = 1;
+      row_length = _number_of_cells[2];
+      column_increment = _number_of_cells[3];
+      column_length = _number_of_cells[0];
+      dxinv = _inv_cell_size[1];
+      break;
+    case TRAVELDIRECTION_FACE_Y_N:
+      i = 1;
+      left_grid = &neighbour;
+      right_grid = this;
+      start_index_left = (_number_of_cells[1] - 1) * _number_of_cells[2];
+      start_index_right = 0;
+      row_increment = 1;
+      row_length = _number_of_cells[2];
+      column_increment = _number_of_cells[3];
+      column_length = _number_of_cells[0];
+      dxinv = _inv_cell_size[1];
+      break;
+    case TRAVELDIRECTION_FACE_Z_P:
+      i = 2;
+      left_grid = this;
+      right_grid = &neighbour;
+      start_index_left = _number_of_cells[2] - 1;
+      start_index_right = 0;
+      row_increment = _number_of_cells[2];
+      row_length = _number_of_cells[1];
+      column_increment = _number_of_cells[3];
+      column_length = _number_of_cells[0];
+      dxinv = _inv_cell_size[2];
+      break;
+    case TRAVELDIRECTION_FACE_Z_N:
+      i = 2;
+      left_grid = &neighbour;
+      right_grid = this;
+      start_index_left = _number_of_cells[2] - 1;
+      start_index_right = 0;
+      row_increment = _number_of_cells[2];
+      row_length = _number_of_cells[1];
+      column_increment = _number_of_cells[3];
+      column_length = _number_of_cells[0];
+      dxinv = _inv_cell_size[2];
+      break;
+    default:
+      cmac_error("Unknown hydro neighbour: %" PRIiFAST32, direction);
+      break;
+    }
+
+    // using the index computation below is (much) faster than setting the
+    // increment correctly and summing the indices manually
+    for (int_fast32_t ic = 0; ic < column_length; ++ic) {
+      for (int_fast32_t ir = 0; ir < row_length; ++ir) {
+        const int_fast32_t index_left =
+            start_index_left + ic * column_increment + ir * row_increment;
+        const int_fast32_t index_right =
+            start_index_right + ic * column_increment + ir * row_increment;
+        left_grid->_hydro_variables[index_left].set_test_neighbour_density_sum(
+            left_grid->_hydro_variables[index_left]
+                .get_test_neighbour_density_sum() +
+            right_grid->_hydro_variables[index_right].get_test_density());
+        right_grid->_hydro_variables[index_right]
+            .set_test_neighbour_density_sum(
+                right_grid->_hydro_variables[index_right]
+                    .get_test_neighbour_density_sum() +
+                left_grid->_hydro_variables[index_left].get_test_density());
+      }
+    }
+  }
+
+  /**
+   * @brief Perform a sweep over all cell pairs across the boundary between
+   * this subgrid and the given box boundary.
+   *
+   * The function traverses the axes parallel to the edge between the subgrid
+   * and the box boundary. For each cell A along this axis, it calls the
+   * boundary object to figure out how to update the test neighbour density sum
+   * variable.
+   */
+  inline void
+  outer_ghost_test_neighbour_density_sum_sweep(const int_fast32_t direction,
+                                               const HydroBoundary &boundary) {
+
+    int_fast32_t i, start_index_left, row_increment, row_length,
+        column_increment, column_length;
+    double dxinv;
+    HydroDensitySubGrid *left_grid;
+    CoordinateVector<> offset;
+    switch (direction) {
+    case TRAVELDIRECTION_FACE_X_P:
+      i = 0;
+      left_grid = this;
+      start_index_left = (_number_of_cells[0] - 1) * _number_of_cells[3];
+      row_increment = 1;
+      row_length = _number_of_cells[2];
+      column_increment = _number_of_cells[2];
+      column_length = _number_of_cells[1];
+      dxinv = _inv_cell_size[0];
+      offset = CoordinateVector<>(_cell_size[0], 0., 0.);
+      break;
+    case TRAVELDIRECTION_FACE_X_N:
+      i = 0;
+      left_grid = this;
+      start_index_left = 0;
+      row_increment = 1;
+      row_length = _number_of_cells[2];
+      column_increment = _number_of_cells[2];
+      column_length = _number_of_cells[1];
+      dxinv = -_inv_cell_size[0];
+      offset = CoordinateVector<>(-_cell_size[0], 0., 0.);
+      break;
+    case TRAVELDIRECTION_FACE_Y_P:
+      i = 1;
+      left_grid = this;
+      start_index_left = (_number_of_cells[1] - 1) * _number_of_cells[2];
+      row_increment = 1;
+      row_length = _number_of_cells[2];
+      column_increment = _number_of_cells[3];
+      column_length = _number_of_cells[0];
+      dxinv = _inv_cell_size[1];
+      offset = CoordinateVector<>(0., _cell_size[1], 0.);
+      break;
+    case TRAVELDIRECTION_FACE_Y_N:
+      i = 1;
+      left_grid = this;
+      start_index_left = 0;
+      row_increment = 1;
+      row_length = _number_of_cells[2];
+      column_increment = _number_of_cells[3];
+      column_length = _number_of_cells[0];
+      dxinv = -_inv_cell_size[1];
+      offset = CoordinateVector<>(0., -_cell_size[1], 0.);
+      break;
+    case TRAVELDIRECTION_FACE_Z_P:
+      i = 2;
+      left_grid = this;
+      start_index_left = _number_of_cells[2] - 1;
+      row_increment = _number_of_cells[2];
+      row_length = _number_of_cells[1];
+      column_increment = _number_of_cells[3];
+      column_length = _number_of_cells[0];
+      dxinv = _inv_cell_size[2];
+      offset = CoordinateVector<>(0., 0., _cell_size[2]);
+      break;
+    case TRAVELDIRECTION_FACE_Z_N:
+      i = 2;
+      left_grid = this;
+      start_index_left = 0;
+      row_increment = _number_of_cells[2];
+      row_length = _number_of_cells[1];
+      column_increment = _number_of_cells[3];
+      column_length = _number_of_cells[0];
+      dxinv = -_inv_cell_size[2];
+      offset = CoordinateVector<>(0., 0., -_cell_size[2]);
+      break;
+    default:
+      cmac_error("Unknown hydro neighbour: %" PRIiFAST32, direction);
+      break;
+    }
+
+    // using the index computation below is (much) faster than setting the
+    // increment correctly and summing the indices manually
+    for (int_fast32_t ic = 0; ic < column_length; ++ic) {
+      for (int_fast32_t ir = 0; ir < row_length; ++ir) {
+        const int_fast32_t index_left =
+            start_index_left + ic * column_increment + ir * row_increment;
+        left_grid->_hydro_variables[index_left].set_test_neighbour_density_sum(
+            left_grid->_hydro_variables[index_left]
+                .get_test_neighbour_density_sum() +
+            boundary.get_test_density(
+                left_grid->_hydro_variables[index_left].get_test_density()));
+      }
+    }
+  }
 };
 
 #endif // HYDRODENSITYSUBGRID_HPP

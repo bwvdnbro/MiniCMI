@@ -54,6 +54,15 @@ private:
   /*! @brief External instanteneous energy terms (in J). */
   double _energy_term;
 
+  /// TEST VARIABLES: these are used as an example
+
+  /*! @brief Copy of the number density variable (in m^-3). */
+  double _test_density;
+
+  /*! @brief Sum of the _test_density values in all neighbouring cells
+   *  (in m^-3). */
+  double _test_neighbour_density_sum;
+
 public:
   /**
    * @brief (Empty) constructor.
@@ -61,7 +70,9 @@ public:
   inline HydroVariables()
       : _primitives{0., 0., 0., 0., 0.}, _conserved{0., 0., 0., 0., 0.},
         _delta_conserved{0., 0., 0., 0., 0.}, _energy_rate_term(0.),
-        _energy_term(0.) {}
+        _energy_term(0.),
+        /* INITIALIZE TEST VARIABLES */
+        _test_density(0.), _test_neighbour_density_sum(0.) {}
 
   /**
    * @brief Get read only access to the given component of the primitive
@@ -325,6 +336,23 @@ public:
 
     _energy_rate_term = other._energy_rate_term;
     _energy_term = other._energy_term;
+  }
+
+  /// TEST VARIABLE GETTERS/SETTERS
+
+  inline double get_test_density() const { return _test_density; }
+
+  inline void set_test_density(const double test_density) {
+    _test_density = test_density;
+  }
+
+  inline double get_test_neighbour_density_sum() const {
+    return _test_neighbour_density_sum;
+  }
+
+  inline void
+  set_test_neighbour_density_sum(const double test_neighbour_density_sum) {
+    _test_neighbour_density_sum = test_neighbour_density_sum;
   }
 };
 
