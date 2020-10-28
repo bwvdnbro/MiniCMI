@@ -76,6 +76,12 @@ enum TaskType {
   /*! @brief Flush the continuous source photon buffers at the end of the photon
    *  packet creation phase of the iteration. */
   TASKTYPE_FLUSH_CONTINUOUS_PHOTON_BUFFERS,
+  /// EXAMPLE TASKS
+  TASKTYPE_TEST_DENSITY,
+  TASKTYPE_TEST_NEIGHBOUR_SWEEP_INTERNAL,
+  TASKTYPE_TEST_NEIGHBOUR_SWEEP_EXTERNAL,
+  TASKTYPE_TEST_GHOST_SWEEP,
+  /// END EXAMPLE TASKS
   /*! @brief Task type counter. */
   TASKTYPE_NUMBER
 };
@@ -253,6 +259,15 @@ public:
   inline void set_number_of_unfinished_parents(
       const uint_fast8_t number_of_unfinished_parents) {
     _number_of_unfinished_parents.set(number_of_unfinished_parents);
+  }
+
+  /**
+   * @brief Increment the number of unfinished parents by one.
+   *
+   * @return Number of unfinished parents left.
+   */
+  inline uint_fast8_t increment_number_of_unfinished_parents() {
+    return _number_of_unfinished_parents.pre_increment();
   }
 
   /**

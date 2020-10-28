@@ -30,6 +30,7 @@
 #include "ThreadSafeVector.hpp"
 #include "Utilities.hpp"
 
+#include <fstream>
 #include <sstream>
 #include <vector>
 
@@ -83,6 +84,47 @@ public:
     delete _shared_queue;
   }
 
+  inline Task &get_free_task(uint_fast32_t &index) {
+    index = _tasks->get_free_element();
+    return (*_tasks)[index];
+  }
+
+  inline void enqueue(AtomicValue<uint_fast32_t> &number_of_tasks,
+                      const uint_fast32_t index,
+                      int_fast32_t queue_index = -1) {
+    if ((*_tasks)[index].get_number_of_unfinished_parents() == 0) {
+      if (queue_index >= 0) {
+        _queues[queue_index]->add_task(index);
+      } else {
+        _shared_queue->add_task(index);
+      }
+      number_of_tasks.pre_increment();
+    }
+  }
+
+  inline void add_link(const uint_fast32_t parent, const uint_fast32_t child) {
+    (*_tasks)[parent].add_child(child);
+    (*_tasks)[child].increment_number_of_unfinished_parents();
+  }
+
+  template <typename _grid_type_>
+  inline void unlock_dependencies(const uint_fast32_t task_index,
+                                  AtomicValue<uint_fast32_t> &number_of_tasks,
+                                  DensitySubGridCreator<_grid_type_> &grid) {
+    (*_tasks)[task_index].unlock_dependency();
+    const unsigned char numchild =
+        (*_tasks)[task_index].get_number_of_children();
+    for (uint_fast8_t i = 0; i < numchild; ++i) {
+      const size_t ichild = (*_tasks)[task_index].get_child(i);
+      if ((*_tasks)[ichild].decrement_number_of_unfinished_parents() == 0) {
+        _queues[(*grid.get_subgrid((*_tasks)[ichild].get_subgrid()))
+                    .get_owning_thread()]
+            ->add_task(ichild);
+        number_of_tasks.pre_increment();
+      }
+    }
+  }
+
   /**
    * @brief Get a task from one of the queues.
    *
@@ -90,9 +132,10 @@ public:
    * @return Index of a locked task that is ready for execution, or NO_TASK if
    * no eligible task could be found.
    */
-  inline uint_fast32_t get_task(const int_fast8_t thread_id) {
+  inline Task *get_task(const int_fast8_t thread_id,
+                        uint_fast32_t &task_index) {
 
-    uint_fast32_t task_index = _queues[thread_id]->get_task(*_tasks);
+    task_index = _queues[thread_id]->get_task(*_tasks);
     if (task_index == NO_TASK) {
 
       // try to steal a task from another thread's queue
@@ -118,7 +161,24 @@ public:
       }
     }
 
-    return task_index;
+    if (task_index == NO_TASK) {
+      return nullptr;
+    } else {
+      return &(*_tasks)[task_index];
+    }
+  }
+
+  inline void dump_tasks() {
+    std::ofstream ofile("tasks.txt");
+    for (uint_fast32_t i = 0; i < _tasks->size(); ++i) {
+      Task &task = (*_tasks)[i];
+      int_fast8_t type;
+      int_fast32_t thread_id;
+      uint_fast64_t start, end;
+      task.get_timing_information(type, thread_id, start, end);
+      ofile << i << "\t" << static_cast<uint_fast32_t>(type) << "\t"
+            << thread_id << "\t" << start << "\t" << end << "\n";
+    }
   }
 };
 
