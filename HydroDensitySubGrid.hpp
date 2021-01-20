@@ -30,6 +30,9 @@
 #include "DensityValues.hpp"
 #include "Hydro.hpp"
 #include "HydroVariables.hpp"
+#include "CoordinateVector.hpp"
+
+const double constG = 6.67408 * pow(10, -11);
 
 /**
  * @brief Extension of DensitySubGrid that adds hydro variables.
@@ -46,13 +49,20 @@ private:
   double _cell_areas[3];
 
   /*! @brief Hydrodynamical variables. */
-  HydroVariables *_hydro_variables;
+  HydroVariables* _hydro_variables;
 
   /*! @brief Gradient limiters for the primitive hydrodynamical variables. */
   double *_primitive_variable_limiters;
 
   /*! @brief Indices of the hydro tasks associated with this subgrid. */
   size_t _hydro_tasks[18];
+
+  /*! @brief Total mass of subgrid in kg. */
+  double _total_mass;
+
+  /*! @brief Centre of mass of subgrid */
+  CoordinateVector<> _centre_of_mass;
+
 
 public:
   /**
@@ -825,6 +835,27 @@ public:
     }
   }
 
+	void update_centre_of_mass() {
+		double mass = 0;
+	    CoordinateVector<> unnormalisedCoM(0);
+		//std::cout << "Number of cells[0] = " << _number_of_cells[0] << std::endl;
+		for (int_fast32_t ix = 0; ix < _number_of_cells[0]; ++ix) {
+			for (int_fast32_t iy = 0; iy < _number_of_cells[1]; ++iy) {
+				for (int_fast32_t iz = 0; iz < _number_of_cells[2]; ++iz) {
+					const int_fast32_t indexi =
+						ix * _number_of_cells[3] + iy * _number_of_cells[2] + iz;
+					double cellMass = _hydro_variables[indexi].get_test_density();
+					//std::cout << "Cell Mass: "<<cellMass << std::endl;
+					mass += cellMass;
+					//std::cout << "Cell Midpoint: " << get_cell_midpoint(indexi)[0] << std::endl;
+					unnormalisedCoM += cellMass * get_cell_midpoint(indexi);
+				}
+			}
+		}
+		_total_mass = mass;
+		_centre_of_mass = unnormalisedCoM/mass;
+	}
+
   /**
    * @brief Set the hydro task with the given index.
    *
@@ -843,6 +874,24 @@ public:
    */
   inline size_t get_hydro_task(const int_fast32_t i) const {
     return _hydro_tasks[i];
+  }
+
+  /**
+	 * @brief Get read only access to the total mass of the subgrid.
+	 *
+	 * @return The total mass of the subgrid.
+	 */
+  double get_total_mass() {
+	  return _total_mass;
+  }
+  /**
+   * @brief Get read only access to the position of the centre of
+   * mass of the subgrid.
+   *
+   * @return The centre of mass of the subgrid.
+   */
+  CoordinateVector<> get_centre_of_mass() {
+	  return _centre_of_mass;
   }
 
   /**
@@ -935,9 +984,9 @@ public:
      *
      * @return Read/write access to the ionization variables.
      */
-    inline IonizationVariables &get_ionization_variables() {
-      return _subgrid->_ionization_variables[_index];
-    }
+	inline IonizationVariables& get_ionization_variables() {
+		return _subgrid->_ionization_variables[_index];
+	}
 
     // Iterator functionality
 
@@ -1050,6 +1099,109 @@ public:
       _hydro_variables[i].set_test_density(
           _ionization_variables[i].get_number_density());
     }
+  }
+
+  inline void inner_gravity() {
+	  //Interate over all pairs of cells, so 6 loops total
+	  for (int_fast32_t ix = 0; ix < _number_of_cells[0]; ++ix) {
+		  for (int_fast32_t iy = 0; iy < _number_of_cells[1]; ++iy) {
+			  for (int_fast32_t iz = 0; iz < _number_of_cells[2]; ++iz) {
+				  const int_fast32_t indexi =
+					  ix * _number_of_cells[3] + iy * _number_of_cells[2] + iz;
+				  for (int_fast32_t jx = 0; jx < _number_of_cells[0]; ++jx) {
+					  for (int_fast32_t jy = 0; jy < _number_of_cells[1]; ++jy) {
+						  for (int_fast32_t jz = 0; jz < _number_of_cells[2]; ++jz) {
+							  const int_fast32_t indexj =
+								  jx * _number_of_cells[3] + jy * _number_of_cells[2] + jz;
+							  if (indexj >= indexi) {
+								  break;
+							  }
+							  CoordinateVector<> r = get_cell_midpoint(indexi) - get_cell_midpoint(indexj);
+							  double distance = r.norm();
+							  if (distance == 0) {
+								  std::cout << "Inner zero distance: " << indexi << " ," << indexj << std::endl;
+							  }
+							  
+							  _hydro_variables[indexi].set_test_neighbour_density_sum(
+								  _hydro_variables[indexi].get_test_neighbour_density_sum() -
+								  _hydro_variables[indexj].get_test_density()/distance*constG);
+							  _hydro_variables[indexj].set_test_neighbour_density_sum(
+								  _hydro_variables[indexj].get_test_neighbour_density_sum() -
+								  _hydro_variables[indexi].get_test_density()/distance*constG);
+						  }
+					  }
+				  }
+			  }
+		  }
+	  }
+  }
+
+  //Calculates gravity interaction between every cell in this subgrid and
+  //every cell in other subgrid
+  inline void outer_gravity(HydroDensitySubGrid& other, int treeCode) {
+	  double separation = (get_cell_midpoint(0) - other.get_cell_midpoint(0)).norm();
+	  //double width = (get_cell_midpoint(_number_of_cells[0]) - get_cell_midpoint(0)).norm();
+	  //std::cout << separation << std::endl;
+
+	  //Other subgrid far enough away to average its graviational effect
+	  if (treeCode && separation > treeCode) {
+		  //std::cout << "Entering CoM loop" << std::endl;
+		  CoordinateVector<> x1 = get_cell_midpoint(0);
+		  CoordinateVector<> x2 = other.get_cell_midpoint(0);
+
+		  CoordinateVector<> otherCoM = other._centre_of_mass;
+		  for (int_fast32_t ix = 0; ix < _number_of_cells[0]; ++ix) {
+			  for (int_fast32_t iy = 0; iy < _number_of_cells[1]; ++iy) {
+				  for (int_fast32_t iz = 0; iz < _number_of_cells[2]; ++iz) {
+					  const int_fast32_t indexi =
+						  ix * _number_of_cells[3] + iy * _number_of_cells[2] + iz;
+
+					  CoordinateVector<> r = get_cell_midpoint(indexi) - otherCoM;
+					  double distance = r.norm();
+
+					  _hydro_variables[indexi].set_test_neighbour_density_sum(
+						  _hydro_variables[indexi].get_test_neighbour_density_sum() -
+						  other._total_mass / distance*constG);
+
+					  r = other.get_cell_midpoint(indexi) - _centre_of_mass;
+					  distance = r.norm();
+					  other._hydro_variables[indexi].set_test_neighbour_density_sum(
+						  other._hydro_variables[indexi].get_test_neighbour_density_sum() -
+						  _total_mass / distance*constG);
+				  }
+			  }
+		  }
+	  }
+	  else {
+		  //Interate over all pairs of cells, so 6 loops total
+		  for (int_fast32_t ix = 0; ix < _number_of_cells[0]; ++ix) {
+			  for (int_fast32_t iy = 0; iy < _number_of_cells[1]; ++iy) {
+				  for (int_fast32_t iz = 0; iz < _number_of_cells[2]; ++iz) {
+					  for (int_fast32_t jx = 0; jx < _number_of_cells[0]; ++jx) {
+						  for (int_fast32_t jy = 0; jy < _number_of_cells[1]; ++jy) {
+							  for (int_fast32_t jz = 0; jz < _number_of_cells[2]; ++jz) {
+								  const int_fast32_t indexi =
+									  ix * _number_of_cells[3] + iy * _number_of_cells[2] + iz;
+								  const int_fast32_t indexj =
+									  jx * _number_of_cells[3] + jy * _number_of_cells[2] + jz;
+
+								  CoordinateVector<> r = get_cell_midpoint(indexi) - other.get_cell_midpoint(indexj);
+								  double distance = r.norm();
+
+
+								  _hydro_variables[indexi].set_test_neighbour_density_sum(
+									  _hydro_variables[indexi].get_test_neighbour_density_sum() -
+									  other._hydro_variables[indexj].get_test_density() / distance*constG);
+								  other._hydro_variables[indexj].set_test_neighbour_density_sum(
+									  other._hydro_variables[indexj].get_test_neighbour_density_sum() -
+									  _hydro_variables[indexi].get_test_density() / distance*constG);
+							  }
+						  }
+					  }
+				  }
+			  }
+		  }
+	  }
   }
 
   /**
