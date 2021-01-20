@@ -1023,6 +1023,8 @@ public:
         _anchor[2] + (three_index[2] + 0.5) * _cell_size[2]);
   }
 
+
+
   /**
    * @brief Initialize the hydrodynamic variables for a cell in this subgrid.
    *

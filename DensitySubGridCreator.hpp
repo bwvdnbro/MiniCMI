@@ -34,6 +34,7 @@
 #include "OpenMP.hpp"
 #include "TravelDirections.hpp"
 
+#include <iostream>
 #include <cinttypes>
 #include <vector>
 
